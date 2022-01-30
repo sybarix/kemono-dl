@@ -196,15 +196,13 @@ class downloader:
         self.current_user = user
         self.current_user_path = os.path.join(
             args['output'],
-            user['service'],
             clean_folder_name(f"{user['username']} [{user['user_id']}]")
         )
 
     def _set_current_post(self, post:dict):
         self.current_post = post
         self.current_post_path = os.path.join(
-            self.current_user_path,
-            clean_folder_name(f"[{post['date_object_string']}] [{post['id']}] {post['title']}")
+            self.current_user_path
         )
 
     def _should_download_post(self):
@@ -309,9 +307,9 @@ class downloader:
                     os.makedirs(self.current_post_path)
             for index, attachment in enumerate(self.current_post['attachments']):
                 index_string = str(index+1).zfill(len(str(len(self.current_post['attachments']))))
-                file_name = os.path.join(self.current_post_path, clean_file_name(f"[{index_string}]_{attachment['name']}"))
+                file_name = os.path.join(self.current_post_path, clean_file_name(f"{self.current_post['id']} [{index_string}] - {attachment['name']}"))
                 if args['no_indexing']:
-                    file_name = os.path.join(self.current_post_path, clean_file_name(f"{attachment['name']}"))
+                    file_name = os.path.join(self.current_post_path, clean_file_name(f"{self.current_post['id']} - {attachment['name']}"))
                 file_url = f"https://{self.current_user['site']}.party/data{attachment['path']}?f={attachment['name']}"
                 file_hash = find_hash(attachment['path'])
                 self._requests_download(file_url, file_name, file_hash)
@@ -328,7 +326,7 @@ class downloader:
             if not args['skip_content']:
                 if not os.path.exists(self.current_post_path):
                     os.makedirs(self.current_post_path)
-                with open(os.path.join(self.current_post_path, 'content.html'),'wb') as f:
+                with open(os.path.join(self.current_post_path, f"{self.current_post['id']} content.html"),'wb') as f:
                     f.write(content_soup.prettify().encode("utf-16"))
 
     def _save_inline(self, soup):
@@ -350,7 +348,7 @@ class downloader:
     def _save_links(self, soup):
         href_tags = soup.find_all(href=True)
         if href_tags:
-            with open(os.path.join(self.current_post_path,'content_links.txt'),'w') as f:
+            with open(os.path.join(self.current_post_path, f"{self.current_post['id']} content_links.txt"),'w') as f:
                 for href_tag in href_tags:
                     f.write(href_tag['href'] + '\n')
 
@@ -368,7 +366,7 @@ class downloader:
                 else:
                     if not os.path.exists(self.current_post_path):
                         os.makedirs(self.current_post_path)
-                    with open(os.path.join(self.current_post_path, 'comments.html'),'wb') as f:
+                    with open(os.path.join(self.current_post_path, f"{self.current_post['id']} comments.html"),'wb') as f:
                         f.write(comment_html.prettify().encode("utf-16"))
 
     def _download_embeds(self):
